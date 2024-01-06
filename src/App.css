@@ -1,0 +1,59 @@
+body {
+    margin: 0;
+    padding: 0;
+    background-color: rgb(152, 248, 248);
+}
+
+#timer-app {
+    display: grid;
+    gap: 10px;
+    max-width: 60%;
+    max-height: 100vh;
+    margin: 10rem auto;
+    padding: 1.5rem;
+    border-radius: 10px;
+    grid-template-areas:
+        "break-decrement  break-label  break-increment"
+        "session-decrement session-label session-increment"
+        "time-label time-left start_stop"
+        "reset time-left start_stop";
+    grid-template-rows: repeat(4, 1fr);
+    grid-template-columns: repeat(3, 1fr);
+    background-color: rgb(37, 31, 88);
+    color: aliceblue;
+    text-align: center;
+    box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.2);
+}
+
+#time-left {
+    grid-area: time-left;
+    font-size: 2.5rem;
+    text-align: center;
+    font-weight: bolder;
+    background-color: bisque;
+    color: rgb(53, 54, 55);
+    padding-top: 1rem;
+    border-radius: 5px;
+    box-shadow: 0px 0px 5px rgba(0, 0, 0, 0.2);
+}
+
+#start_stop {
+    grid-area: start_stop;
+    background-color: rgb(151, 149, 161);
+    color: aliceblue;
+    font-size: 1.5rem;
+    padding: 0.5rem;
+    border-radius: 5px;
+    border: none;
+    cursor: pointer;
+    box-shadow: 0px 0px 5px rgba(0, 0, 0, 0.2);
+    transition: background-color 0.3s ease;
+}
+
+#start_stop:hover {
+    background-color: rgb(130, 128, 140);
+}
+
+#start_stop:active {
+    background-color: rgb(110, 108, 120);
+}

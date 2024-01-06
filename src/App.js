@@ -1,111 +1,129 @@
 import React, { useState, useEffect, useRef } from 'react';
-import beepSound from './telefoon.mp3';
+import './App.css';
+import beepSound from  './telefoon.mp3';
 
-function Timer() {
-  const [seconds, setSeconds] = useState(0);
+const Timer = () => {
   const [breakLength, setBreakLength] = useState(5);
   const [sessionLength, setSessionLength] = useState(25);
+  const [timerLabel, setTimerLabel] = useState('Session');
+  const [timeLeft, setTimeLeft] = useState(sessionLength * 60);
   const [isRunning, setIsRunning] = useState(false);
-  const [isBreak, setIsBreak] = useState(false); // Added state for break
-  const intervalRef = useRef(null);
   const beepRef = useRef(null); // Added ref for beep audio element
-  const [displayBreakLength, setDisplayBreakLength] = useState(breakLength);
-  const [displaySessionLength, setDisplaySessionLength] = useState(sessionLength);
 
-  useEffect(() => {
-    if (isRunning) {
-      intervalRef.current = setInterval(() => {
-        setSeconds(seconds => seconds - 1);
-      }, 1000);
-    } else {
-      clearInterval(intervalRef.current);
+  const decrementBreakLength = () => {
+    if (breakLength > 1) {
+      setBreakLength(breakLength - 1);
     }
+  };
 
-    return () => clearInterval(intervalRef.current);
-  }, [isRunning]);
-
-  useEffect(() => {
-    if (seconds < 0) {
-      clearInterval(intervalRef.current);
-      if (isBreak) {
-        setDisplayBreakLength(displayBreakLength => displayBreakLength - 1);
-        setSeconds(breakLength * 60);
-      } else {
-        setIsBreak(true);
-        setDisplaySessionLength(displaySessionLength => displaySessionLength - 1);
-        setSeconds(sessionLength * 60);
-      }
-      beepRef.current.play().catch(() => {
-        // Autoplay was blocked. Show a UI element to let the user manually start playback.
-        alert('Please click on the page to allow sound to play.');
-      }); // Play the sound when countdown reaches zero
+  const incrementBreakLength = () => {
+    if (breakLength < 60) {
+      setBreakLength(breakLength + 1);
     }
-  }, [seconds, isBreak, breakLength, sessionLength]);
-
-  useEffect(() => {
-    setSeconds(sessionLength * 60);
-  }, [sessionLength]);
-
-  useEffect(() => {
-    setIsRunning(true); // Start the timer when the component mounts
-  }, []);
-
-  const handleReset = () => {
-    clearInterval(intervalRef.current);
-    setBreakLength(5);
-    setSessionLength(25);
-    setSeconds(0);
-    setIsBreak(false); // Reset isBreak to false
-    document.getElementById("break-length").textContent = "5";
-    document.getElementById("session-length").textContent = "25";
-    document.getElementById("time-left").textContent = "25:00";
-    beepRef.current.pause(); // Pause the sound when reset
-    beepRef.current.currentTime = 0; // Reset the sound to the beginning
   };
 
-  const handleBreakDecrement = () => {
-    setBreakLength(breakLength => Math.max(breakLength - 1, 1));
+  const decrementSessionLength = () => {
+    if (sessionLength > 1) {
+      setSessionLength(sessionLength - 1);
+      setTimeLeft((sessionLength - 1) * 60);
+    }
   };
 
-  const handleBreakIncrement = () => {
-    setBreakLength(breakLength => Math.min(breakLength + 1, 60));
+  const incrementSessionLength = () => {
+    if (sessionLength < 60) {
+      setSessionLength(sessionLength + 1);
+      setTimeLeft((sessionLength + 1) * 60);
+    }
   };
 
-  const handleSessionDecrement = () => {
-    setSessionLength(sessionLength => Math.max(sessionLength - 1, 1));
-  };
-
-  const handleSessionIncrement = () => {
-    setSessionLength(sessionLength => Math.min(sessionLength + 1, 60));
-  };
-
-  const formatTime = (timeInSeconds) => {
-    const minutes = Math.floor(timeInSeconds / 60).toString().padStart(2, '0');
-    const seconds = (timeInSeconds % 60).toString().padStart(2, '0');
-    return `${minutes}:${seconds}`;
-  };
-
-  const handleStartStop = () => {
+  const startStopTimer = () => {
     setIsRunning(!isRunning);
   };
 
+  const resetTimer = () => {
+    setBreakLength(5);
+    setSessionLength(25);
+    setTimerLabel('Session');
+    setTimeLeft(sessionLength * 60);
+    setIsRunning(false);
+    beepRef.current.pause();
+    beepRef.current.currentTime = 0;
+  };
+
+  useEffect(() => {
+    let countdownInterval;
+
+    if (isRunning) {
+      countdownInterval = setInterval(() => {
+        setTimeLeft((prevTimeLeft) => {
+          if (prevTimeLeft === 0) {
+            beepRef.current.play();
+
+            if (timerLabel === 'Session') {
+              setTimerLabel('Break');
+              return breakLength * 60;
+            } else {
+              setTimerLabel('Session');
+              return sessionLength * 60;
+            }
+          } else {
+            return prevTimeLeft - 1;
+          }
+        });
+      }, 1000);
+    }
+
+    return () => clearInterval(countdownInterval);
+  }, [isRunning, breakLength, sessionLength, timerLabel]);
+
+  const formatTime = (time) => {
+    const minutes = Math.floor(time / 60)
+      .toString()
+      .padStart(2, '0');
+    const seconds = (time % 60).toString().padStart(2, '0');
+    return `${minutes}:${seconds}`;
+  };
+
+  useEffect(() => {
+    document.getElementById("break-length").innerText = breakLength;
+    document.getElementById("session-length").innerText = sessionLength; // Added this line to set the session length
+  }, [breakLength, sessionLength]);
+
+  useEffect(() => {
+    setTimeLeft(sessionLength * 60); // Update timeLeft when sessionLength changes
+  }, [sessionLength]);
+
   return (
-    <div>
-      <label id="break-label">Break Length</label>
-      <label id="session-label">Session Length</label>
-      <button id="break-decrement" onClick={handleBreakDecrement}>BreDec</button>
-      <button id="session-decrement" onClick={handleSessionDecrement}>SesDec</button>
-      <button id="break-increment" onClick={handleBreakIncrement}>BreInc</button>
-      <button id="session-increment" onClick={handleSessionIncrement}>SesInc</button>
-      <div id="break-length">{displayBreakLength}</div>
-      <div id="session-length">{displaySessionLength}</div>
-      <label id="timer-label">{isBreak ? "Break" : "Session"}</label> {/* Display "Break" when isBreak is true */}
-      <div id="time-left">{formatTime(seconds)}</div>
-      <button id="start_stop" onClick={handleStartStop}>START/STOP</button>
-      <button id="reset" onClick={handleReset}>RESET</button>
-      <audio id="beep" src={beepSound} preload="auto" ref={beepRef} muted /> {/* Added ref to beep audio element */}
+    <div id="timer-app">
+      <button id="break-decrement" onClick={decrementBreakLength}>
+        Decrement Break Length
+      </button>
+      <div id="break-label">Break Length: <span id="break-length">{breakLength}</span></div>
+      <button id="break-increment" onClick={incrementBreakLength}>
+        Increment Break Length
+      </button>
+
+      <button id="session-decrement" onClick={decrementSessionLength}>
+        Decrement Session Length
+      </button>
+      <div id="session-label">Session Length: <span id="session-length">{sessionLength}</span></div> {/* Added span element with id="session-length" */}
+      <button id="session-increment" onClick={incrementSessionLength}>
+        Increment Session Length
+      </button>
+
+      <div id="timer-label">{timerLabel}</div>
+      <div id="time-left">{formatTime(timeLeft)}</div>
+
+      <button id="start_stop" onClick={startStopTimer}>
+        Start/Stop
+      </button>
+      <button id="reset" onClick={resetTimer}>
+        Reset
+      </button>
+
+      <audio id="beep" src={beepSound} preload="auto" ref={beepRef} muted/> {/* Added ref to beep audio element */}
     </div>
   );
-}
+};
 
 export default Timer;
